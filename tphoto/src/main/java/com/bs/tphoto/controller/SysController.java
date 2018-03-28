@@ -1,10 +1,24 @@
 package com.bs.tphoto.controller;
 
 import com.bs.tphoto.cache.MemoryData;
+import com.bs.tphoto.entity.YUser;
 import com.bs.tphoto.po.Connect;
-import com.bs.tphoto.utils.encryption.aes.AESUtil;
+import com.bs.tphoto.po.ResBody;
+import com.bs.tphoto.service.SysService;
+import com.bs.tphoto.utils.encryption.des.Des3Util;
+import com.bs.tphoto.utils.encryption.md5.Md5Utils;
 import com.bs.tphoto.utils.encryption.rsa.RSACoder;
+import com.bs.tphoto.utils.token.annotation.Authorization;
+import com.bs.tphoto.utils.token.annotation.CurrentUser;
+import com.bs.tphoto.utils.token.model.ResultModel;
+import com.bs.tphoto.utils.token.model.ResultStatus;
+import com.bs.tphoto.utils.token.model.TokenModel;
+import com.bs.tphoto.utils.token.service.TokenManager;
+import com.bs.tphoto.utils.token.service.impl.RedisTokenManager;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -14,6 +28,11 @@ import java.util.Map;
 @RequestMapping("/sys")
 public class SysController {
 
+    @Autowired
+    private SysService sysService;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     /**
      * 请求公钥
@@ -35,7 +54,6 @@ public class SysController {
         }catch (Exception e){
             e.printStackTrace();
         }
-
         return con;
     }
 
@@ -70,25 +88,44 @@ public class SysController {
      * @return
      */
     @PostMapping("/login")
-    public String login(@RequestParam String identifier,@RequestParam String password){
-        System.out.println("密钥工作前：");
-        System.out.println("username="+identifier);
-        System.out.println("password="+password);
-        Object key = MemoryData.USERS_KEY.get(identifier);
-        if( null == key){
-            return "not have key";
-        }
-
+    public ResponseEntity login(@RequestParam String identifier, @RequestParam String username, @RequestParam String password){
         try {
-            password = AESUtil.decrypt(password,key.toString());
-            System.out.println("密钥工作后：");
-            System.out.println("username="+identifier);
-            System.out.println("password="+password);
+            TokenManager tokenManager = new RedisTokenManager();
+            tokenManager.setRedis(redisTemplate);
+            Object key = MemoryData.USERS_KEY.get(identifier);
+            if( null == key){
+                return new ResponseEntity<>(ResultModel.error(ResultStatus.NO_KEY_ERROR), HttpStatus.OK);//密钥不存在
+            }
+            username = Des3Util.decode(username,key.toString());
+            password = Des3Util.decode(password,key.toString());
+            password = Md5Utils.MD5Encode(password,"utf-8",true);
+            YUser yUser = new YUser();
+            yUser.setuAccount(username);
+            yUser.setuPwd(password);
+            yUser = sysService.login(yUser);
+            if(null == yUser){
+                return new ResponseEntity<>(ResultModel.error(ResultStatus.USERNAME_OR_PASSWORD_ERROR), HttpStatus.OK);//账号或密码不正确
+            }
+            if(-2 == yUser.getuState()){
+                return new ResponseEntity<>(ResultModel.error(ResultStatus.USER_NOT_CAN_LOGIN), HttpStatus.OK);//账号禁用
+            }
+            TokenModel model = tokenManager.createToken(yUser.getuAccount());
+            return new ResponseEntity<>(ResultModel.ok(model), HttpStatus.OK);
         } catch (Exception e) {
             e.printStackTrace();
-            return  "fail";
+            return new ResponseEntity<>(ResultModel.error(ResultStatus.SYS_ERROR), HttpStatus.OK);//系统异常
         }
-        return "ok";
     }
+
+    @DeleteMapping("/logout")
+    @Authorization
+    public ResponseEntity logout(@CurrentUser YUser user) {
+        System.out.println(user);
+        TokenManager tokenManager = new RedisTokenManager();
+        tokenManager.setRedis(redisTemplate);
+        tokenManager.deleteToken(user.getuAccount());
+        return new ResponseEntity<>(ResultModel.ok(), HttpStatus.OK);
+    }
+
 
 }
