@@ -28,7 +28,7 @@ public interface SysMapper {
      * @param account
      * @return
      */
-    @Select("select u_name,u_account,u_sign,u_headImg,u_state from y_user where u_account = #{account} and u_state != -1")
+    @Select("select u_id,u_name,u_account,u_sign,u_headImg,u_state from y_user where u_account = #{account} and u_state != -1")
     YUser findOne(@Param("account") String account);
 
 

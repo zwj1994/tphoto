@@ -2,6 +2,7 @@ package com.bs.tphoto.service;
 
 import com.bs.tphoto.entity.YAlbum;
 import com.bs.tphoto.entity.YPhoto;
+import com.bs.tphoto.entity.YUser;
 
 import java.util.List;
 
@@ -24,5 +25,12 @@ public interface YAlbumService {
      * @return
      */
      List<YPhoto> queryPhotosByAId(String aId,int page);
+
+    /**
+     * 根据日期查询我的相册(由高到低)
+     * @param page
+     * @return
+     */
+    List<YAlbum> queryMyAlbumByDateDesc(int page,YUser yUser);
 
 }

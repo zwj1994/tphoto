@@ -110,6 +110,8 @@ public class SysController {
                 return new ResponseEntity<>(ResultModel.error(ResultStatus.USER_NOT_CAN_LOGIN), HttpStatus.OK);//账号禁用
             }
             TokenModel model = tokenManager.createToken(yUser.getuAccount());
+            model.setHeaderImg(yUser.getuHeadImg());
+            model.setSign(yUser.getuSign());
             return new ResponseEntity<>(ResultModel.ok(model), HttpStatus.OK);
         } catch (Exception e) {
             e.printStackTrace();
