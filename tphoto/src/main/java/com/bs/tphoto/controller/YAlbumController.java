@@ -1,8 +1,10 @@
 package com.bs.tphoto.controller;
 
 import com.bs.tphoto.entity.YAlbum;
+import com.bs.tphoto.entity.YBanner;
 import com.bs.tphoto.entity.YPhoto;
 import com.bs.tphoto.entity.YUser;
+import com.bs.tphoto.po.WallpaperApiModel;
 import com.bs.tphoto.service.YAlbumService;
 import com.bs.tphoto.utils.token.annotation.Authorization;
 import com.bs.tphoto.utils.token.annotation.CurrentUser;
@@ -28,7 +30,6 @@ public class YAlbumController {
      */
     @GetMapping("/ranking")
     public List<YAlbum> ranking(@RequestParam int page){
-        System.out.println("a==========page="+page);
         List<YAlbum> list = null;
         try {
             list = yAlbumService.queryAllByLikeCountDesc(page);
@@ -45,7 +46,6 @@ public class YAlbumController {
      */
     @GetMapping("/photo")
     public List<YPhoto> photo(@RequestParam String aId,@RequestParam int page){
-        System.out.println("aId="+aId+"==page="+page);
         List<YPhoto> list = null;
         try {
             list = yAlbumService.queryPhotosByAId(aId,page);
@@ -63,8 +63,24 @@ public class YAlbumController {
     @GetMapping("/myAlbum")
     @Authorization
     public List<YAlbum> myAlbum(@RequestParam int page,@CurrentUser YUser user){
-        System.out.println("a==========page="+user);
         List<YAlbum> list = null;
+        try {
+            list = yAlbumService.queryMyAlbumByDateDesc(page,user);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    /**
+     * 获取Banner
+     * @param
+     * @return
+     */
+    @GetMapping("/getBanner")
+    @Authorization
+    public List<YBanner> getBanner(){
+        List<WallpaperApiModel.SpecialBean> list = null;
         try {
             list = yAlbumService.queryMyAlbumByDateDesc(page,user);
         }catch (Exception e){
