@@ -36,4 +36,9 @@ public class YAlbumServiceImpl implements YAlbumService {
     public List<YAlbum> queryMyAlbumByDateDesc(int page, YUser yUser) {
         return yAlbumMapper.selectMyAlbumByDateDesc(PageUtil.getOffset(page,5),5,yUser.getuId());
     }
+
+    @Override
+    public List<YAlbum> queryPublicYalbumByCreateDateDesc(int page) {
+        return yAlbumMapper.selectPublicYalbumByCreateDateDesc(PageUtil.getOffset(page,10),10);
+    }
 }

@@ -1,6 +1,9 @@
 package com.bs.tphoto.service;
 
+import com.bs.tphoto.entity.YBanner;
 import com.bs.tphoto.entity.YUser;
+
+import java.util.List;
 
 /**
  * 系统服务
@@ -20,4 +23,10 @@ public interface SysService {
      * @return
      */
     YUser findOne(String account);
+
+    /**
+     * 获取轮播图
+     * @return
+     */
+    List<YBanner> queryBanner();
 }

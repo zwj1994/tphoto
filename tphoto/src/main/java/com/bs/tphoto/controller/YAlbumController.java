@@ -28,7 +28,7 @@ public class YAlbumController {
      * @param page
      * @return
      */
-    @GetMapping("/ranking")
+    @PostMapping("/ranking")
     public List<YAlbum> ranking(@RequestParam int page){
         List<YAlbum> list = null;
         try {
@@ -44,7 +44,7 @@ public class YAlbumController {
      * @param aId
      * @return
      */
-    @GetMapping("/photo")
+    @PostMapping("/photo")
     public List<YPhoto> photo(@RequestParam String aId,@RequestParam int page){
         List<YPhoto> list = null;
         try {
@@ -60,7 +60,7 @@ public class YAlbumController {
      * @param page
      * @return
      */
-    @GetMapping("/myAlbum")
+    @PostMapping("/myAlbum")
     @Authorization
     public List<YAlbum> myAlbum(@RequestParam int page,@CurrentUser YUser user){
         List<YAlbum> list = null;
@@ -73,19 +73,19 @@ public class YAlbumController {
     }
 
     /**
-     * 获取Banner
-     * @param
+     * 获取所有公开的相册(分页)
+     * @param page
      * @return
      */
-    @GetMapping("/getBanner")
-    @Authorization
-    public List<YBanner> getBanner(){
-        List<WallpaperApiModel.SpecialBean> list = null;
+    @PostMapping("/allPublicAlbum")
+    public List<YAlbum> allPublicAlbum(@RequestParam int page){
+        List<YAlbum> list = null;
         try {
-            list = yAlbumService.queryMyAlbumByDateDesc(page,user);
+            list = yAlbumService.queryPublicYalbumByCreateDateDesc(page);
         }catch (Exception e){
             e.printStackTrace();
         }
         return list;
     }
+
 }

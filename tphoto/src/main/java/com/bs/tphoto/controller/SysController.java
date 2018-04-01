@@ -1,9 +1,11 @@
 package com.bs.tphoto.controller;
 
 import com.bs.tphoto.cache.MemoryData;
+import com.bs.tphoto.entity.YBanner;
 import com.bs.tphoto.entity.YUser;
 import com.bs.tphoto.po.Connect;
 import com.bs.tphoto.po.ResBody;
+import com.bs.tphoto.po.WallpaperApiModel;
 import com.bs.tphoto.service.SysService;
 import com.bs.tphoto.utils.encryption.des.Des3Util;
 import com.bs.tphoto.utils.encryption.md5.Md5Utils;
@@ -21,6 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 
@@ -122,11 +125,26 @@ public class SysController {
     @DeleteMapping("/logout")
     @Authorization
     public ResponseEntity logout(@CurrentUser YUser user) {
-        System.out.println(user);
         TokenManager tokenManager = new RedisTokenManager();
         tokenManager.setRedis(redisTemplate);
         tokenManager.deleteToken(user.getuAccount());
         return new ResponseEntity<>(ResultModel.ok(), HttpStatus.OK);
+    }
+
+    /**
+     * 获取Banner
+     * @param
+     * @return
+     */
+    @PostMapping("/getBanner")
+    public List<YBanner> getBanner(){
+        List<YBanner> list = null;
+        try {
+            list = sysService.queryBanner();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return list;
     }
 
 

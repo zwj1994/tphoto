@@ -27,10 +27,18 @@ public interface YAlbumService {
      List<YPhoto> queryPhotosByAId(String aId,int page);
 
     /**
-     * 根据日期查询我的相册(由高到低)
+     * 根据日期查询我的相册（由高到低）
      * @param page
      * @return
      */
     List<YAlbum> queryMyAlbumByDateDesc(int page,YUser yUser);
+
+
+    /**
+     * 根据创建时间获取所有公开的相册（由高到低）
+     * @param page
+     * @return
+     */
+    List<YAlbum> queryPublicYalbumByCreateDateDesc(int page);
 
 }

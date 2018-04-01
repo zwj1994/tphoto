@@ -51,4 +51,16 @@ public interface YAlbumMapper {
             "            order by a_createDate desc limit #{offset},#{rows}")
     List<YAlbum> selectMyAlbumByDateDesc(@Param("offset")int offset ,@Param("rows") int rows,@Param("uId") String uId);
 
+    /**
+     * 获取所有公开的相册
+     * @param offset
+     * @param rows
+     * @return
+     */
+    @Select(" SELECT a_id,a_name,a_cover,a_describe,a_createDate FROM y_album\n" +
+            " WHERE a_state = 0 AND a_privacy = 0\n" +
+            " ORDER BY a_createDate DESC\n" +
+            " LIMIT #{offset},#{rows}")
+    List<YAlbum> selectPublicYalbumByCreateDateDesc(@Param("offset")int offset ,@Param("rows") int rows);
+
 }
