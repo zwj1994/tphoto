@@ -4,6 +4,7 @@ import com.bs.tphoto.PageBean;
 import com.bs.tphoto.entity.YAlbum;
 import com.bs.tphoto.entity.YPhoto;
 import com.bs.tphoto.entity.YUser;
+import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -62,5 +63,22 @@ public interface YAlbumMapper {
             " ORDER BY a_createDate DESC\n" +
             " LIMIT #{offset},#{rows}")
     List<YAlbum> selectPublicYalbumByCreateDateDesc(@Param("offset")int offset ,@Param("rows") int rows);
+
+    /**
+     * 新增相册
+     * @param yAlbum
+     * @return
+     */
+    @Insert("INSERT into y_album(a_id,a_name,a_cover,a_describe,a_privacy,a_state,u_id) VALUES(#{aId},#{aName},#{aCover},#{aDescribe},#{aPrivacy},#{aState},#{uId})")
+    int insertYalbum(YAlbum yAlbum);
+
+    /**
+     * 新增相片
+     * @param yPhoto
+     * @return
+     */
+    @Insert("insert into y_photo(p_id,p_big,p_small,a_id) values(#{pId},#{pBig},#{pSmall},#{aId})")
+    int insertYphoto(YPhoto yPhoto);
+
 
 }

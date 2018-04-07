@@ -41,4 +41,18 @@ public interface YAlbumService {
      */
     List<YAlbum> queryPublicYalbumByCreateDateDesc(int page);
 
+    /**
+     * 添加相册
+     * @param yAlbum
+     * @return
+     */
+    int addYalbum(YAlbum yAlbum);
+
+    /**
+     * 添加相片
+     * @param yPhotos
+     * @return
+     */
+    int addYphoto(List<YPhoto> yPhotos);
+
 }

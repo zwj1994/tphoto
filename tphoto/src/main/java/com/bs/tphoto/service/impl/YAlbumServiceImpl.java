@@ -41,4 +41,21 @@ public class YAlbumServiceImpl implements YAlbumService {
     public List<YAlbum> queryPublicYalbumByCreateDateDesc(int page) {
         return yAlbumMapper.selectPublicYalbumByCreateDateDesc(PageUtil.getOffset(page,10),10);
     }
+
+    @Override
+    public int addYalbum(YAlbum yAlbum) {
+        return yAlbumMapper.insertYalbum(yAlbum);
+    }
+
+    @Override
+    public int addYphoto(List<YPhoto> yPhotos) {
+        if(null == yPhotos || yPhotos.size() == 0){
+            return 0;
+        }
+        int count = 0;
+        for(YPhoto model : yPhotos){
+            count += yAlbumMapper.insertYphoto(model);
+        }
+        return count;
+    }
 }
