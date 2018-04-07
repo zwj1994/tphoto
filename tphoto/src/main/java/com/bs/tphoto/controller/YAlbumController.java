@@ -11,6 +11,8 @@ import com.bs.tphoto.utils.token.annotation.CurrentUser;
 import com.bs.tphoto.utils.token.model.ResultModel;
 import com.bs.tphoto.utils.token.model.ResultStatus;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +22,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -116,10 +119,8 @@ public class YAlbumController {
         try {
             String aId = UUID.randomUUID().toString();
             List<YPhoto> yPhotos = new ArrayList<>();
-
-//            String filepath = request.getServletContext().getRealPath("./") + File.separator + "upload/";
             String filepath = "g:/ftp/youm/upload/";
-            String ftppath = "ftp://192.168.31.126:21/youm/upload/";
+            String loadFilePath = "http://192.168.0.130:8080/youm/yalbum/";
             File file = new File(filepath);
             if (!file.exists()) {
                 file.mkdirs();
@@ -127,21 +128,20 @@ public class YAlbumController {
             for (FileModel fileModel : files) {
                 YPhoto yPhoto = new YPhoto();
                 yPhoto.setaId(aId);
-                yPhoto.setpBig(ftppath + fileModel.getName());
-                yPhoto.setpSmall(ftppath + fileModel.getName());
+                yPhoto.setpBig( loadFilePath+fileModel.getName());
+                yPhoto.setpSmall(loadFilePath+fileModel.getName());
                 yPhoto.setpId(UUID.randomUUID().toString());
                 yPhotos.add(yPhoto);
 
                 byte[] b = Base64Coder.decodeLines(fileModel.getFile());
-                FileOutputStream fos = new FileOutputStream(file.getPath()
-                        + "/" + fileModel.getName());
+                FileOutputStream fos = new FileOutputStream(filepath + fileModel.getName());
                 fos.write(b);
                 fos.flush();
                 fos.close();
             }
 
             YAlbum yAlbum = new YAlbum();
-            yAlbum.setaCover(ftppath + files.get(0).name);
+            yAlbum.setaCover(loadFilePath+files.get(0).name);
             yAlbum.setaDescribe("");
             yAlbum.setaId(aId);
             yAlbum.setaName(content);
@@ -177,6 +177,26 @@ public class YAlbumController {
 
         public void setName(String name) {
             this.name = name;
+        }
+    }
+
+    public static final String ROOT = "upload";
+
+    private final ResourceLoader resourceLoader;
+
+    @Autowired
+    public YAlbumController(ResourceLoader resourceLoader) {
+        this.resourceLoader = resourceLoader;
+    }
+
+    @RequestMapping(method = RequestMethod.GET, value = "/{filename:.+}")
+    @ResponseBody
+    public ResponseEntity<?> getFile(@PathVariable String filename) {
+        String filepath = "g:/ftp/youm/upload/";
+        try {
+            return ResponseEntity.ok(resourceLoader.getResource("file:"+filepath + filename));
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
         }
     }
 }
