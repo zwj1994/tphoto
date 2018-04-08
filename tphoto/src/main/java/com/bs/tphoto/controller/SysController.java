@@ -115,6 +115,7 @@ public class SysController {
             TokenModel model = tokenManager.createToken(yUser.getuAccount());
             model.setHeaderImg(yUser.getuHeadImg());
             model.setSign(yUser.getuSign());
+            model.setuId(yUser.getuId());
             return new ResponseEntity<>(ResultModel.ok(model), HttpStatus.OK);
         } catch (Exception e) {
             e.printStackTrace();

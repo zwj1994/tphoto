@@ -1,5 +1,8 @@
 package com.bs.tphoto.servlet;
 
+import com.bs.tphoto.entity.YUser;
+import com.bs.tphoto.utils.token.annotation.Authorization;
+import com.bs.tphoto.utils.token.annotation.CurrentUser;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
@@ -24,18 +27,25 @@ public class UploadServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
     // 上传文件存储目录
-    private static final String UPLOAD_DIRECTORY = "upload";
+    private static final String uploadPath = "e:/ceshi";
 
     // 上传配置
     private static final int MEMORY_THRESHOLD   = 1024 * 1024 * 3;  // 3MB
     private static final int MAX_FILE_SIZE      = 1024 * 1024 * 40; // 40MB
     private static final int MAX_REQUEST_SIZE   = 1024 * 1024 * 50; // 50MB
 
+
     /**
      * 上传数据及保存文件
      */
     protected void doPost(HttpServletRequest request,
                           HttpServletResponse response){
+        String uId = request.getParameter("uId");
+        String content = request.getParameter("content");
+        String isPrivate = request.getParameter("isPrivate");
+        System.out.println(uId);
+        System.out.println(content);
+        System.out.println(isPrivate);
         response.setCharacterEncoding("utf-8");
         // 检测是否为多媒体上传
         if (!ServletFileUpload.isMultipartContent(request)) {
@@ -65,8 +75,8 @@ public class UploadServlet extends HttpServlet {
 
         // 构造临时路径来存储上传的文件
         // 这个路径相对当前应用的目录
-        String uploadPath = request.getServletContext().getRealPath("./") + File.separator + UPLOAD_DIRECTORY;
-
+//        String uploadPath = request.getServletContext().getRealPath("./") + File.separator + UPLOAD_DIRECTORY;
+//            String uploadPath = "e:/ceshi";
 
         // 如果目录不存在则创建
         File uploadDir = new File(uploadPath);

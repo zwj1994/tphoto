@@ -20,7 +20,7 @@ public interface SysMapper {
      * @param model
      * @return
      */
-    @Select("select u_name,u_account,u_sign,u_headImg,u_state from y_user where u_account = #{uAccount} and u_pwd = #{uPwd} and u_state != -1")
+    @Select("select u_id,u_name,u_account,u_sign,u_headImg,u_state from y_user where u_account = #{uAccount} and u_pwd = #{uPwd} and u_state != -1")
     YUser select(YUser model);
 
     /**
