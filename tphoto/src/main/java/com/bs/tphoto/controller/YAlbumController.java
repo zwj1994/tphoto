@@ -1,11 +1,13 @@
 package com.bs.tphoto.controller;
 
+import ch.qos.logback.core.util.FileUtil;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.bs.tphoto.entity.*;
 import com.bs.tphoto.po.WallpaperApiModel;
 import com.bs.tphoto.service.YAlbumService;
 import com.bs.tphoto.utils.Base64Coder;
+import com.bs.tphoto.utils.UUIDUtil;
 import com.bs.tphoto.utils.token.annotation.Authorization;
 import com.bs.tphoto.utils.token.annotation.CurrentUser;
 import com.bs.tphoto.utils.token.model.ResultModel;
@@ -21,6 +23,8 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -29,9 +33,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 /**
  *  相册
@@ -114,58 +116,6 @@ public class YAlbumController {
     }
 
 
-    /**
-     * 创建相册
-     * @param user
-     * @param content
-     * @param isPrivate
-     * @param image_size
-     * @param files
-     */
-    @PostMapping("/createAlbum")
-    @Authorization
-    public ResponseEntity createAlbum(HttpServletRequest request, @CurrentUser YUser user, @RequestParam String content, @RequestParam boolean isPrivate, @RequestParam int image_size, @RequestBody List<FileModel> files){
-        int count = 0;
-        try {
-            String aId = UUID.randomUUID().toString();
-            List<YPhoto> yPhotos = new ArrayList<>();
-            File file = new File(filepath);
-            if (!file.exists()) {
-                file.mkdirs();
-            }
-            for (FileModel fileModel : files) {
-                YPhoto yPhoto = new YPhoto();
-                yPhoto.setaId(aId);
-                yPhoto.setpBig(fileModel.getName());
-                yPhoto.setpSmall(fileModel.getName());
-                yPhoto.setpId(UUID.randomUUID().toString());
-                yPhotos.add(yPhoto);
-
-                byte[] b = Base64Coder.decodeLines(fileModel.getFile());
-                FileOutputStream fos = new FileOutputStream(filepath + fileModel.getName());
-                fos.write(b);
-                fos.flush();
-                fos.close();
-            }
-
-            YAlbum yAlbum = new YAlbum();
-            yAlbum.setaCover(files.get(0).name);
-            yAlbum.setaDescribe("");
-            yAlbum.setaId(aId);
-            yAlbum.setaName(content);
-            yAlbum.setaPrivacy(isPrivate ? 1 : 0);
-            yAlbum.setuId(user.getuId());
-            yAlbum.setaState(0);
-            count = yAlbumService.addYalbum(yAlbum);
-            if(count > 0){
-                count = yAlbumService.addYphoto(yPhotos);
-            }
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-        return new ResponseEntity<>(count > 0 ? ResultModel.ok() : ResultModel.error(ResultStatus.FAIL), HttpStatus.OK);
-    }
-
     private final ResourceLoader resourceLoader;
 
     @Autowired
@@ -182,117 +132,83 @@ public class YAlbumController {
             return ResponseEntity.notFound().build();
         }
     }
-    // 上传文件存储目录
-    private static final String uploadPath = "e:/ceshi";
 
-    // 上传配置
-    private static final int MEMORY_THRESHOLD   = 1024 * 1024 * 3;  // 3MB
-    private static final int MAX_FILE_SIZE      = 1024 * 1024 * 40; // 40MB
-    private static final int MAX_REQUEST_SIZE   = 1024 * 1024 * 50; // 50MB
 
-    @PostMapping("/createAlbumNew")
+    /**
+     * 创建相册
+     * @param request
+     * @param user
+     * @return
+     */
+    @PostMapping(value="/createAlbum")
     @Authorization
-    public void createAlbumNew(HttpServletRequest request,HttpServletResponse response,@CurrentUser YUser user){
-        String userName = request.getParameter("userName");
-        String user1 = user.getuId();
-        System.out.println(userName);
-        System.out.println(user1);
-        response.setCharacterEncoding("utf-8");
-        // 检测是否为多媒体上传
-        if (!ServletFileUpload.isMultipartContent(request)) {
-            // 如果不是则停止
-            printMsg(response,"Error: 表单必须包含 enctype=multipart/form-data");
-            return;
-        }
-        // 配置上传参数
-        DiskFileItemFactory factory = new DiskFileItemFactory();
-        // 设置内存临界值 - 超过后将产生临时文件并存储于临时目录中
-        factory.setSizeThreshold(MEMORY_THRESHOLD);
-//        System.out.println(System.getProperty("java.io.tmpdir"));
-        // 设置临时存储目录
-        factory.setRepository(new File("e:/"));
-
-        ServletFileUpload upload = new ServletFileUpload(factory);
-
-        // 设置最大文件上传值
-        upload.setFileSizeMax(MAX_FILE_SIZE);
-
-        // 设置最大请求值 (包含文件和表单数据)
-        upload.setSizeMax(MAX_REQUEST_SIZE);
-
-        // 中文处理
-        upload.setHeaderEncoding("UTF-8");
-
-        // 如果目录不存在则创建
-        File uploadDir = new File(uploadPath);
-        if (!uploadDir.exists()) {
-            uploadDir.mkdir();
-        }
-
+    public ResponseEntity createAlbum(@RequestParam String content,@RequestParam boolean isPrivate, HttpServletRequest request,@CurrentUser YUser user) {
+        int count = 0;
         try {
-            // 解析请求的内容提取文件数据
-            @SuppressWarnings("unchecked")
-            List<FileItem> formItems = upload.parseRequest(request);
-
-            if (formItems != null && formItems.size() > 0) {
-                // 迭代表单数据
-                for (FileItem item : formItems) {
-                    // 处理不在表单中的字段
-                    if (!item.isFormField()) {
-                        String fileName = new File(item.getName()).getName();
-                        String filePath = uploadPath + File.separator + fileName;
-                        File storeFile = new File(filePath);
-                        // 在控制台输出文件的上传路径
-                        System.out.println(filePath);
-                        // 保存文件到硬盘
-                        item.write(storeFile);
+            List<MultipartFile> files =((MultipartHttpServletRequest)request).getFiles("file");
+            List<String> fileNames = new ArrayList<>();
+            if(uploadFile(files,fileNames)){
+                String aId = UUIDUtil.get32LenUUId();
+                YAlbum yAlbum = new YAlbum();
+                yAlbum.setaCover(fileNames.get(0));
+                yAlbum.setaDescribe("");
+                yAlbum.setaId(aId);
+                yAlbum.setaName(content);
+                yAlbum.setaPrivacy(isPrivate ? 1 : 0);
+                yAlbum.setuId(user.getuId());
+                yAlbum.setaState(0);
+                count = yAlbumService.addYalbum(yAlbum);
+                if(count > 0){
+                    List<YPhoto> yPhotos = new ArrayList<>();
+                    for(String fileName : fileNames){
+                        YPhoto yPhoto = new YPhoto();
+                        yPhoto.setaId(aId);
+                        yPhoto.setpBig(fileName);
+                        yPhoto.setpSmall(fileName);
+                        yPhoto.setpId(UUIDUtil.get32LenUUId());
+                        yPhotos.add(yPhoto);
                     }
+                    count = yAlbumService.addYphoto(yPhotos);
                 }
-                printMsg(response,"success");
             }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            printMsg(response,
-                    "so big");
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+        //返回json
+        return new ResponseEntity<>(count > 0 ? ResultModel.ok() : ResultModel.error(ResultStatus.FAIL), HttpStatus.OK);
     }
 
     /**
-     * 打印消息
-     * @param response
-     * @throws IOException
+     * 批量上传文件
+     * @param files
+     * @throws Exception
      */
-    private void printMsg(HttpServletResponse response, String msg){
-        PrintWriter writer = null;
-        try {
-            writer = response.getWriter();
-            writer.println(msg);
-            writer.flush();
-        } catch (IOException e) {
+    private boolean uploadFile(List<MultipartFile> files,List<String> fileNames){
+        if(null == files || files.isEmpty() || null == fileNames){
+            return false;
+        }
+        try{
+            File targetFile = new File(filepath);
+            if(!targetFile.exists()){
+                targetFile.mkdirs();
+            }
+            if(null != files && files.size() > 0){
+                FileOutputStream out = null;
+                for(MultipartFile f : files){
+                    String fileName = f.getOriginalFilename();
+                    fileNames.add(fileName);
+                    byte[] file = f.getBytes();
+                    out = new FileOutputStream(filepath + fileName);
+                    out.write(file);
+                    out.flush();
+                    out.close();
+                }
+            }
+        }catch (IOException e){
             e.printStackTrace();
-        }finally {
-            writer.close();
+            return  false;
         }
+        return true;
     }
 
-        static class FileModel{
-        private String file;
-        private String name;
-
-        public String getFile() {
-            return file;
-        }
-
-        public void setFile(String file) {
-            this.file = file;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-    }
 }
