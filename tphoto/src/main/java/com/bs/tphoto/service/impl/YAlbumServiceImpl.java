@@ -24,7 +24,7 @@ public class YAlbumServiceImpl implements YAlbumService {
 
     @Override
     public List<YAlbum> queryAllByLikeCountDesc(int page) {
-        return yAlbumMapper.selectAllByLikeCountDesc(new PageBean(PageUtil.getOffset(page,5),5));
+        return yAlbumMapper.selectAllByLikeCountDesc(new PageBean(PageUtil.getOffset(page,10),10));
     }
 
     @Override
@@ -34,7 +34,7 @@ public class YAlbumServiceImpl implements YAlbumService {
 
     @Override
     public List<YAlbum> queryMyAlbumByDateDesc(int page, YUser yUser) {
-        return yAlbumMapper.selectMyAlbumByDateDesc(PageUtil.getOffset(page,5),5,yUser.getuId());
+        return yAlbumMapper.selectMyAlbumByDateDesc(PageUtil.getOffset(page,10),10,yUser.getuId());
     }
 
     @Override

@@ -7,6 +7,7 @@ import com.bs.tphoto.entity.*;
 import com.bs.tphoto.po.WallpaperApiModel;
 import com.bs.tphoto.service.YAlbumService;
 import com.bs.tphoto.utils.Base64Coder;
+import com.bs.tphoto.utils.ReduceImgUtil;
 import com.bs.tphoto.utils.UUIDUtil;
 import com.bs.tphoto.utils.token.annotation.Authorization;
 import com.bs.tphoto.utils.token.annotation.CurrentUser;
@@ -44,8 +45,17 @@ import java.util.*;
 @PropertySource({"classpath:config/config.properties"})
 public class YAlbumController {
 
-    @Value("${local.upload.images.dir}")
-    private String filepath;
+    @Value("${local.upload.img.original.dir}")
+    private String original_filepath;
+
+    @Value("${local.upload.img.compress.dir}")
+    private String compress_filepath;
+
+    @Value("${local.upload.img.compress.threshold}")
+    private int compress_threshold;
+
+    @Value("${local.upload.img.compress.quality}")
+    private int compress_quality;
 
     @Autowired
     private YAlbumService yAlbumService;
@@ -123,11 +133,21 @@ public class YAlbumController {
         this.resourceLoader = resourceLoader;
     }
 
-    @RequestMapping(method = RequestMethod.GET, value = "/{filename:.+}")
+    @RequestMapping(method = RequestMethod.GET, value = "/original/{filename:.+}")
     @ResponseBody
-    public ResponseEntity<?> getFile(@PathVariable String filename) {
+    public ResponseEntity<?> original(@PathVariable String filename) {
         try {
-            return ResponseEntity.ok(resourceLoader.getResource("file:" + filepath + filename));
+            return ResponseEntity.ok(resourceLoader.getResource("file:" + original_filepath + filename));
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @RequestMapping(method = RequestMethod.GET, value = "/compress/{filename:.+}")
+    @ResponseBody
+    public ResponseEntity<?> compress(@PathVariable String filename) {
+        try {
+            return ResponseEntity.ok(resourceLoader.getResource("file:" + compress_filepath + filename));
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }
@@ -181,14 +201,15 @@ public class YAlbumController {
     /**
      * 批量上传文件
      * @param files
-     * @throws Exception
+     * @param fileNames
+     * @return
      */
     private boolean uploadFile(List<MultipartFile> files,List<String> fileNames){
         if(null == files || files.isEmpty() || null == fileNames){
             return false;
         }
         try{
-            File targetFile = new File(filepath);
+            File targetFile = new File(original_filepath);
             if(!targetFile.exists()){
                 targetFile.mkdirs();
             }
@@ -198,10 +219,19 @@ public class YAlbumController {
                     String fileName = f.getOriginalFilename();
                     fileNames.add(fileName);
                     byte[] file = f.getBytes();
-                    out = new FileOutputStream(filepath + fileName);
+                    out = new FileOutputStream(original_filepath + fileName);
                     out.write(file);
                     out.flush();
                     out.close();
+                    try {
+                        if(file.length >= 1024 * compress_threshold){
+                            ReduceImgUtil.saveMinPhoto(original_filepath + fileName, compress_filepath , fileName, compress_quality, 1d);
+                        }else{
+                            ReduceImgUtil.copyFile(original_filepath + fileName,compress_filepath,fileName);
+                        }
+                    }catch (Exception e){
+                        e.printStackTrace();
+                    }
                 }
             }
         }catch (IOException e){
